@@ -1,0 +1,11 @@
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\bin\Debug\FUI.exe.config
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\bin\Debug\FUI.exe
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\bin\Debug\FUI.pdb
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\bin\Debug\log4net.xml
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\bin\Debug\Newtonsoft.Json.xml
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\obj\Debug\FUI.csprojResolveAssemblyReference.cache
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\obj\Debug\FUI.exe
+C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\obj\Debug\FUI.pdb
+C:\Users\gretchengrote\Desktop\FUI\FUI\bin\Debug\FUI.exe.config
+C:\Users\gretchengrote\Desktop\FUI\FUI\obj\Debug\FUI.exe
+C:\Users\gretchengrote\Desktop\FUI\FUI\obj\Debug\FUI.pdb
