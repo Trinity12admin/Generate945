@@ -9,3 +9,14 @@ C:\Users\gretchengrote\Documents\Visual Studio 2012\Projects\FUI\FUI\obj\Debug\F
 C:\Users\gretchengrote\Desktop\FUI\FUI\bin\Debug\FUI.exe.config
 C:\Users\gretchengrote\Desktop\FUI\FUI\obj\Debug\FUI.exe
 C:\Users\gretchengrote\Desktop\FUI\FUI\obj\Debug\FUI.pdb
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\FUI.exe.config
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\FUI.exe
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\FUI.pdb
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\Dapper.dll
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\DECK.Core.Common.dll
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\log4net.dll
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\Newtonsoft.Json.dll
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\log4net.xml
+C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\Newtonsoft.Json.xml
+C:\Users\jefftucker\GIT\fui\FUI\obj\Debug\FUI.exe
+C:\Users\jefftucker\GIT\fui\FUI\obj\Debug\FUI.pdb
