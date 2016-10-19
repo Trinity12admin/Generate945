@@ -1,0 +1,29 @@
+﻿2016-10-19 10:01:40,665 [13] INFO  FUI.Middleware.OutgoingQueue - Starting outgoing queue process...
+2016-10-19 10:01:40,929 [13] ERROR FUI.Middleware.ShipmentRepository - Error querying ASN items from database
+System.Data.SqlClient.SqlException (0x80131904): Invalid object name 'dbo.FUI_ship_confirmations'.
+   at System.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at System.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at System.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at System.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at System.Data.SqlClient.SqlDataReader.TryConsumeMetaData()
+   at System.Data.SqlClient.SqlDataReader.get_MetaData()
+   at System.Data.SqlClient.SqlCommand.FinishExecuteReader(SqlDataReader ds, RunBehavior runBehavior, String resetOptionsString, Boolean isInternal, Boolean forDescribeParameterEncryption)
+   at System.Data.SqlClient.SqlCommand.RunExecuteReaderTds(CommandBehavior cmdBehavior, RunBehavior runBehavior, Boolean returnStream, Boolean async, Int32 timeout, Task& task, Boolean asyncWrite, Boolean inRetry, SqlDataReader ds, Boolean describeParameterEncryptionRequest)
+   at System.Data.SqlClient.SqlCommand.RunExecuteReader(CommandBehavior cmdBehavior, RunBehavior runBehavior, Boolean returnStream, String method, TaskCompletionSource`1 completion, Int32 timeout, Task& task, Boolean& usedCache, Boolean asyncWrite, Boolean inRetry)
+   at System.Data.SqlClient.SqlCommand.RunExecuteReader(CommandBehavior cmdBehavior, RunBehavior runBehavior, Boolean returnStream, String method)
+   at System.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior behavior, String method)
+   at System.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior behavior)
+   at System.Data.Common.DbCommand.System.Data.IDbCommand.ExecuteReader(CommandBehavior behavior)
+   at Dapper.SqlMapper.ExecuteReaderWithFlagsFallback(IDbCommand cmd, Boolean wasClosed, CommandBehavior behavior)
+   at Dapper.SqlMapper.<QueryImpl>d__125`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at Dapper.SqlMapper.Query[T](IDbConnection cnn, String sql, Object param, IDbTransaction transaction, Boolean buffered, Nullable`1 commandTimeout, Nullable`1 commandType)
+   at FUI.Middleware.ShipmentRepository.GetShipconfirmationData() in C:\projects\bitbucket\fui\FUI.Middleware\ShipmentRepository.cs:line 71
+ClientConnectionId:e5b75f8c-8c5a-4596-923d-b789f7309129
+Error Number:208,State:1,Class:16
+2016-10-19 10:01:41,537 [12] INFO  FUI.Middleware.NewOrderProcessor - Successfully inserted order for unique ID (616f69a9-6476-40fe-bd04-9d48a4bd9188)
+2016-10-19 11:10:43,988 [13] INFO  FUI.Middleware.OutgoingQueue - Starting outgoing queue process...
+2016-10-19 11:10:44,517 [13] INFO  FUI.Middleware.OutgoingQueue - Sending message for new ship confirmation (254431be-7484-4c8a-960f-8230f930949a)
+2016-10-19 11:10:44,750 [12] INFO  FUI.Middleware.NewOrderProcessor - Successfully inserted order for unique ID (6fdcae54-77f4-47c3-a958-6de3b33db5b7)
+2016-10-19 11:10:45,057 [12] INFO  FUI.Middleware.NewOrderProcessor - Successfully inserted order for unique ID (72bdb34c-975a-4fde-ad7a-13c8cb29d6f8)
