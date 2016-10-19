@@ -20,3 +20,15 @@ C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\log4net.xml
 C:\Users\jefftucker\GIT\fui\FUI\bin\Debug\Newtonsoft.Json.xml
 C:\Users\jefftucker\GIT\fui\FUI\obj\Debug\FUI.exe
 C:\Users\jefftucker\GIT\fui\FUI\obj\Debug\FUI.pdb
+C:\projects\bitbucket\fui\FUI\bin\Debug\FUI.exe.config
+C:\projects\bitbucket\fui\FUI\bin\Debug\FUI.exe
+C:\projects\bitbucket\fui\FUI\bin\Debug\FUI.pdb
+C:\projects\bitbucket\fui\FUI\bin\Debug\Dapper.dll
+C:\projects\bitbucket\fui\FUI\bin\Debug\DECK.Core.Common.dll
+C:\projects\bitbucket\fui\FUI\bin\Debug\log4net.dll
+C:\projects\bitbucket\fui\FUI\bin\Debug\Newtonsoft.Json.dll
+C:\projects\bitbucket\fui\FUI\bin\Debug\log4net.xml
+C:\projects\bitbucket\fui\FUI\bin\Debug\Newtonsoft.Json.xml
+C:\projects\bitbucket\fui\FUI\obj\Debug\FUI.csprojResolveAssemblyReference.cache
+C:\projects\bitbucket\fui\FUI\obj\Debug\FUI.exe
+C:\projects\bitbucket\fui\FUI\obj\Debug\FUI.pdb
