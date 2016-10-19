@@ -109,7 +109,7 @@ namespace FUI.Middleware
                                 BillState = TruncateLongString(order.BillingAddress.Province, 4),
                                 BillPostalCode = TruncateLongString(order.BillingAddress.PostalCode, 10),
                                 BillCountry = TruncateLongString(order.BillingAddress.Country, 2),
-                                BillPhone = TruncateLongString(order.BillingAddress.Phone, 14),
+                                BillPhone = order.BillingAddress.Phone.Length == 10 ? order.BillingAddress.Phone : "6366802750",
                                 ShipFirstName = TruncateLongString(order.ShippingAddress.FirstName, 50),
                                 ShipLastName = TruncateLongString(order.ShippingAddress.LastName, 50),
                                 ShipAddress =
@@ -122,7 +122,7 @@ namespace FUI.Middleware
                                 ShipState = TruncateLongString(order.ShippingAddress.Province, 4),
                                 ShipPostalCode = TruncateLongString(order.ShippingAddress.PostalCode, 10),
                                 ShipCountry = TruncateLongString(order.ShippingAddress.Country, 2),
-                                ShipPhone = TruncateLongString(order.ShippingAddress.Phone, 14),
+                                ShipPhone = order.ShippingAddress.Phone.Length == 10 ? order.ShippingAddress.Phone : "6366802750",
                                 EmailAddress = TruncateLongString(order.BillingAddress.Email, 50),
                                 ShippingMethod = TruncateLongString(GetStringWithoutNull(order.ShippingMethod), 20),
                                 SubTotal = order.Totals.SubTotal,
