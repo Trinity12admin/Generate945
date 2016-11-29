@@ -65,8 +65,9 @@ namespace Trinity12.InventoryImportService
 
         private void ImportInventory(FileInfo file, string warehouse)
         {
+            string archiveName = Path.GetFileNameWithoutExtension(file.Name) + "-" + DateTime.Now.ToString("yyyyMMddhhmmss") + file.Extension;
             FileInfo transitionFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["TransitionPath"], file.Name));
-            FileInfo archiveFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["ArchivePath"], file.Name));
+            FileInfo archiveFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["ArchivePath"], archiveName));
 
             // move to staging folder
             _logger.Info($"moving {file.Name} to transition folder");
@@ -103,8 +104,9 @@ namespace Trinity12.InventoryImportService
 
         private void ImportCasepacks(FileInfo file)
         {
+            string archiveName = Path.GetFileNameWithoutExtension(file.Name) + "-" + DateTime.Now.ToString("yyyyMMddhhmmss") + file.Extension;
             FileInfo transitionFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["TransitionPath"], file.Name));
-            FileInfo archiveFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["ArchivePath"], file.Name));
+            FileInfo archiveFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["ArchivePath"], archiveName));
 
             // move to staging folder
             _logger.Info($"moving {file.Name} to transition folder");
