@@ -57,10 +57,56 @@ namespace Trinity12.InventoryImportService
                 _logger.Trace($"{file.Name} determined to be other inventory file");
                 ImportInventory(file, "FUIA");
             }
+            else if (Regex.IsMatch(file.Name, @"^Drop Ship Inventory \d{4}-\d{1,2}-\d{1,2}\.csv"))
+            {
+                // run drop ship invenrtory import
+                _logger.Trace($"{file.Name} determined to be drop ship inventory file");
+                ImportDropShipInventory(file);
+
+            }
             else
             {
                 _logger.Info($"{file.Name} does not match any existing filters");
             }
+        }
+
+        private void ImportDropShipInventory(FileInfo file)
+        {
+            string archiveName = Path.GetFileNameWithoutExtension(file.Name) + "-" + DateTime.Now.ToString("yyyyMMddhhmmss") + file.Extension;
+            FileInfo transitionFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["TransitionPath"], file.Name));
+            FileInfo archiveFile = new FileInfo(Path.Combine(ConfigurationManager.AppSettings["ArchivePath"], archiveName));
+
+            // move to staging folder
+            _logger.Info($"moving {file.Name} to transition folder");
+            File.Move(file.FullName, transitionFile.FullName);
+
+            // run stored proc on TrinityCatalog
+            try
+            {
+                _logger.Trace($"attempting to pass {file.Name} to po.usp_ImportDropShipInventory");
+                var connString = System.Configuration.ConfigurationManager.ConnectionStrings["TrinityCatalog"].ConnectionString;
+
+                using (var conn = new SqlConnection(connString))
+                using (var command = new SqlCommand("po.usp_ImportDropShipInventory", conn))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.Add(new SqlParameter("@csv", SqlDbType.NVarChar)).Value = transitionFile.FullName;
+                    
+
+                    conn.Open();
+                    command.ExecuteNonQuery();
+                }
+
+                _logger.Info($"{file.Name} successfully imported");
+            }
+            catch (Exception e)
+            {
+                _logger.Error($"error executing po.usp_ImportDropShipInventory: {e.Message}");
+            }
+
+            // move to archive
+            _logger.Info($"moving {file.Name} to archive folder");
+            File.Move(transitionFile.FullName, archiveFile.FullName);
         }
 
         private void ImportInventory(FileInfo file, string warehouse)
