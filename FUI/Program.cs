@@ -1,19 +1,23 @@
-﻿using log4net;
-using log4net.Config;
+﻿using System.Threading;
 using FUI.Logic;
+using NLog;
 
 namespace FUI
 {
     class Program
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
+        private static Logger _logger = LogManager.GetCurrentClassLogger();
 
         static void Main(string[] args)
         {
-            //Configure Log4Net
-            XmlConfigurator.Configure();
+            _logger.Info("Starting FUI Inventory Update");
+
+
             var inventoryLogic = new InventoryLogic();
             inventoryLogic.StartInventoryProcess();
+
+            // 5 seconds to let Papertrail requests catch up
+            Thread.Sleep(5000);
         }
     }
 }

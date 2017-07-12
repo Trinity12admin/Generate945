@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-using log4net;
+using NLog;
 
 namespace FUI.Logic
 {
@@ -16,7 +16,7 @@ namespace FUI.Logic
     public static class FormUpload
     {
         private static readonly Encoding encoding = Encoding.UTF8;
-        private static readonly ILog Log = LogManager.GetLogger(typeof(FormUpload));
+        private static Logger _logger = LogManager.GetCurrentClassLogger();
 
         public static HttpWebResponse MultipartFormDataPost(string postUrl, string userAgent, Dictionary<string, object> postParameters)
         {
@@ -33,7 +33,7 @@ namespace FUI.Logic
             }
             catch (Exception exc)
             {
-                Log.Error("Issue with posting file.", exc);
+                _logger.Error("Issue with posting file.", exc);
             }
 
             return response;

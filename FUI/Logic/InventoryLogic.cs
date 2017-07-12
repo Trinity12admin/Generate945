@@ -12,28 +12,29 @@ using System.Text;
 using System.Threading;
 using Dapper;
 using DECK.Core.Common.Contracts.API;
-using log4net;
 using Newtonsoft.Json;
+using NLog;
+
 
 namespace FUI.Logic
 {
     public class InventoryLogic
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(InventoryLogic));
+        private static Logger _logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
         ///     Start the inventory process. This call will do all of the inventory processing.
         /// </summary>
         public void StartInventoryProcess()
         {
-            Log.Info("Starting Inventory Process.");
+            _logger.Info("Starting Inventory Process.");
 
             var gpConnection = new SqlConnection(ConfigurationManager.ConnectionStrings["GpConnection"].ConnectionString);
 
-            Log.Debug("Gathering Inventory.");
+            _logger.Debug("Gathering Inventory.");
             List<GpInventory> inventory = GetInventoryToImport(gpConnection);
 
-            Log.Debug("Zipping Inventory File");
+            _logger.Debug("Zipping Inventory File");
             string inventoryZip = InventoryToZipFile(inventory);
 
             string apiUrl = ConfigurationManager.AppSettings["WebApiURL"];
@@ -41,15 +42,15 @@ namespace FUI.Logic
             string siteCode = ConfigurationManager.AppSettings["SiteCode"];
             string inventoryExternalName = ConfigurationManager.AppSettings["InventoryExternalName"];
 
-            Log.Debug("Clearing PIM Inventory.");
+            _logger.Debug("Clearing PIM Inventory.");
             ClearInventoryApi(apiUrl, apiKey, siteCode);
-            Log.Debug("Loading file: " + inventoryZip);
+            _logger.Debug("Loading file: " + inventoryZip);
             LoadInventoryApi(apiUrl, apiKey, inventoryZip, siteCode);
             ProcessInventoryApi(apiUrl, apiKey, siteCode, inventoryExternalName);
 
             Cleanup();
 
-            Log.Info("Finished Inventory Process.");
+            _logger.Info("Finished Inventory Process.");
 
             //Time to read output before closing.
             Console.WriteLine("Sleeping for 10 seconds before closing.");
@@ -77,7 +78,7 @@ namespace FUI.Logic
             }
             catch (Exception e)
             {
-                Log.Error("FUI.Logic.InventoryLogic GetInventoryToImport", e);
+                _logger.Error("FUI.Logic.InventoryLogic GetInventoryToImport", e);
                 throw;
             }
 
@@ -105,7 +106,7 @@ namespace FUI.Logic
             }
             catch (Exception exc)
             {
-                Log.Error("Can't create the directory: " + basePath, exc);
+                _logger.Error("Can't create the directory: " + basePath, exc);
             }
 
             DateTime now = DateTime.Now;
@@ -126,7 +127,7 @@ namespace FUI.Logic
             }
             catch (Exception exc)
             {
-                Log.Error("Issue writing inventory to csv file: " + filePathCsv, exc);
+                _logger.Error("Issue writing inventory to csv file: " + filePathCsv, exc);
             }
 
             try
@@ -142,7 +143,7 @@ namespace FUI.Logic
             }
             catch (Exception exc)
             {
-                Log.Error("Issue writing zip file:" + filePathZip, exc);
+                _logger.Error("Issue writing zip file:" + filePathZip, exc);
             }
 
             try
@@ -152,7 +153,7 @@ namespace FUI.Logic
             }
             catch (Exception exc)
             {
-                Log.Error("Issue deleting csv file:" + filePathCsv, exc);
+                _logger.Error("Issue deleting csv file:" + filePathCsv, exc);
             }
 
             return filePathZip;
@@ -187,7 +188,7 @@ namespace FUI.Logic
             catch (Exception exc)
             {
                 Console.WriteLine("Can't Clear Inventory" + exc.Message);
-                Log.Error("Can't Clear Inventory", exc);
+                _logger.Error("Can't Clear Inventory", exc);
                 throw;
             }
 
@@ -243,7 +244,7 @@ namespace FUI.Logic
             catch (Exception exc)
             {
                 Console.WriteLine("Error in LoadInventoryApi" + exc.Message);
-                Log.Error("Error in LoadInventoryApi", exc);
+                _logger.Error("Error in LoadInventoryApi", exc);
                 throw;
             }
 
@@ -287,7 +288,7 @@ namespace FUI.Logic
             catch (Exception exc)
             {
                 Console.WriteLine("Error in PimInventoryTransformMergeImport" + exc.Message);
-                Log.Error("Error in PimInventoryTransformMergeImport", exc);
+                _logger.Error("Error in PimInventoryTransformMergeImport", exc);
                 throw;
             }
 
@@ -314,11 +315,11 @@ namespace FUI.Logic
                         fi.Delete();
                     }
                 }
-                Log.Info("Inventory processing cleanup complete.");
+                _logger.Info("Inventory processing cleanup complete.");
             }
             catch (Exception exc)
             {
-                Log.Error("Problem deleting a file: " + exc.Message);
+                _logger.Error("Problem deleting a file: " + exc.Message);
             }
             Console.WriteLine("Finished file cleanup.");
         }
@@ -368,19 +369,19 @@ namespace FUI.Logic
             }
             catch (WebException webEx)
             {
-                Log.Error("Inventory Import Plugin WebRequestHelper webEx: " + url, webEx);
+                _logger.Error("Inventory Import Plugin WebRequestHelper webEx: " + url, webEx);
 
                 //try to get error details
                 using (StreamReader sr = new StreamReader(webEx.Response.GetResponseStream()))
                 {
                     string errorData = sr.ReadToEnd();
-                    Log.Debug(errorData);
+                    _logger.Debug(errorData);
                 }
                 return null;
             }
             catch (Exception ex)
             {
-                Log.Error("Inventory Import Plugin WebRequestHelper: " + url, ex);
+                _logger.Error("Inventory Import Plugin WebRequestHelper: " + url, ex);
                 return null;
             }
         }
