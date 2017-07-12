@@ -272,11 +272,20 @@ namespace FUI.Logic
                 ExternalName = externalName
             };
 
-            Console.WriteLine("Calling web api: " + apiUrl);
-            string json = JsonConvert.SerializeObject(clearRequest);
-            string responseString = WebRequestHelper(apiUrl + "api/PimInventoryTransformMergeImport", "POST",
-                "application/json", "application/json", json);
-            Console.WriteLine("Web api response: " + responseString);
+            string responseString = null;
+
+            try
+            {
+                Console.WriteLine("Calling web api: " + apiUrl);
+                string json = JsonConvert.SerializeObject(clearRequest);
+                responseString = WebRequestHelper(apiUrl + "api/PimInventoryTransformMergeImport", "POST",
+                    "application/json", "application/json", json);
+                Console.WriteLine("Web api response: " + responseString);
+            }
+            catch (Exception e)
+            {
+                _logger.Error($"Failure encountered when executing PimInventoryTransformMergeImport: {e.Message}");    
+            }
 
             try
             {
