@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DropShipTools", "DropShipTools\DropShipTools.csproj", "{8DB973A9-3FD7-4510-85A4-1AE48FDA2CA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DropShipToolsData", "DropShipToolsData\DropShipToolsData.csproj", "{CD7161EE-75BA-489B-92C0-A0ED98DECABC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{8DB973A9-3FD7-4510-85A4-1AE48FDA2CA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DB973A9-3FD7-4510-85A4-1AE48FDA2CA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DB973A9-3FD7-4510-85A4-1AE48FDA2CA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD7161EE-75BA-489B-92C0-A0ED98DECABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD7161EE-75BA-489B-92C0-A0ED98DECABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD7161EE-75BA-489B-92C0-A0ED98DECABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD7161EE-75BA-489B-92C0-A0ED98DECABC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {34DAE556-8503-48B5-AB1C-F7B575A9A7D5}
 	EndGlobalSection
 EndGlobal

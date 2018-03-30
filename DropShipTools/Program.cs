@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Security.Cryptography;
 using System.Text;
 using DropShipShipmentConfirmations.Properties;
+using DropShipToolsData;
 
 namespace DropShipShipmentconfirmations
 {
@@ -219,9 +217,6 @@ namespace DropShipShipmentconfirmations
                                 s.Append(elemsep + "UP"); // PO106
                                 s.Append(elemsep + dataRow[dataTable.Columns.IndexOf("upc")].ToString().Trim()); // PO107
                                 s.Append(segterm);
-
-
-
                             }
 
                             /* write out the last file from the current table */
@@ -270,38 +265,101 @@ namespace DropShipShipmentconfirmations
         private static int Main()
         {
             int success = 0;
+
+            // TODO: any kind of error handling at all
+            // TODO: papertrail logging
+
+            using (var db = new WMS2Entities())
+            {
+                // Disable SQL command timeouts
+                db.Database.CommandTimeout = 0;
+
+                DateTime dt = DateTime.Now;
+
+                // Have we already run an End of Day today?
+                bool hasrun = db.DayEnds
+                    .Where(x => System.Data.Entity.DbFunctions.TruncateTime(x.started_dt) == dt.Date)
+                    .Any();
+
+                if (hasrun)
+                {
+                    return 1;
+                }
+
+                // If there is an EOD to eb run today that has not already started, get the ID
+                int? ID = db.DayEnds
+                    .Where(x => System.Data.Entity.DbFunctions.TruncateTime(x.started_dt) == null)
+                    .Where(x => System.Data.Entity.DbFunctions.TruncateTime(x.submit_dt) == dt.Date)
+                    .Select(x => x.id)
+                    .FirstOrDefault();
+
+                // If the EOD has not run and there is not one to run and it is after 7:30PM, 
+                // insert a record and use that as today's EOD
+                if (!hasrun && ID == 0 && dt.TimeOfDay>new TimeSpan(hours: 19, minutes: 30, seconds: 0))
+                {
+                    DayEnd d = new DayEnd
+                    {
+                        submit_dt = dt,
+                        submit_user = "Automatic"
+                    };
+
+                    db.DayEnds.Add(d);
+                    db.SaveChanges();
+                    ID = d.id;
+                }
+
+                // If ID is 0 there is no EOD to run
+                if (ID == 0)
+                {
+                    return 1;
+                }
+
+                // Update the started_dt
+                DayEnd de = db.DayEnds
+                    .Where(x => x.id == ID)
+                    .Select(x => x)
+                    .First();
+                de.started_dt = DateTime.Now;
+                db.SaveChanges();
+
+                // Run the EOD shipments update to ensure all data is up-to-date
+                db.usp_EOD_Shipments_Update();
+
+                // shipments
+                success += GenerateFlatFileExport(
+                    ConfigurationManager.AppSettings["DBShipmentExportQuery"],
+                    ConfigurationManager.AppSettings["DBConnectionStringT12"],
+                    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+
+                // inventory
+                success += GenerateFlatFileExport(
+                    ConfigurationManager.AppSettings["DBInventoryExportQuery"],
+                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                    ConfigurationManager.AppSettings["PathForInventoryExport"]) ? 0 : 1;
+
+                // receipts
+                success += GenerateFlatFileExport(
+                    ConfigurationManager.AppSettings["DBReceiptsExportQuery"],
+                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                    ConfigurationManager.AppSettings["PathForReceiptsExport"]) ? 0 : 1;
+
+                // Drop ship PO for FUI
+                success += GeneratePO850Export(
+                    ConfigurationManager.AppSettings["DBPOExportQuery"],
+                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                    ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
+
+                // Drop ship shipments
+                success += GenerateFlatFileExport(
+                    ConfigurationManager.AppSettings["DBPOShipmentExportQuery"],
+                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+               
+                // Update the completed_dt
+                de.completed_dt = DateTime.Now;
+                db.SaveChanges();
+            }
             
-            // shipments
-            success += GenerateFlatFileExport(
-                ConfigurationManager.AppSettings["DBShipmentExportQuery"],
-                ConfigurationManager.AppSettings["DBConnectionStringT12"],
-                ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
-
-            // inventory
-            success += GenerateFlatFileExport(
-                ConfigurationManager.AppSettings["DBInventoryExportQuery"],
-                ConfigurationManager.AppSettings["DBConnectionStringRBI"],
-                ConfigurationManager.AppSettings["PathForInventoryExport"]) ? 0 : 1;
-
-            // receipts
-            success += GenerateFlatFileExport(
-                ConfigurationManager.AppSettings["DBReceiptsExportQuery"],
-                ConfigurationManager.AppSettings["DBConnectionStringRBI"],
-                ConfigurationManager.AppSettings["PathForReceiptsExport"]) ? 0 : 1; 
-            
-            // Drop ship PO for FUI
-            success += GeneratePO850Export(
-                ConfigurationManager.AppSettings["DBPOExportQuery"],
-                ConfigurationManager.AppSettings["DBConnectionStringRBI"],
-                ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
-
-            // Drop ship shipments
-            success += GenerateFlatFileExport(
-                ConfigurationManager.AppSettings["DBPOShipmentExportQuery"],
-                ConfigurationManager.AppSettings["DBConnectionStringRBI"],
-                ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
-
-
             return success; // 0 = good, non-zero = bad
         }
     }
