@@ -283,6 +283,7 @@ namespace DropShipShipmentconfirmations
 
                 if (hasrun)
                 {
+                    Console.WriteLine("End of day has already been run today!");
                     return 1;
                 }
 
@@ -297,6 +298,8 @@ namespace DropShipShipmentconfirmations
                 // insert a record and use that as today's EOD
                 if (!hasrun && ID == 0 && dt.TimeOfDay>new TimeSpan(hours: 19, minutes: 30, seconds: 0))
                 {
+                    Console.WriteLine("End of day has not run and it's after 7:30PM. Running automatically.");
+
                     DayEnd d = new DayEnd
                     {
                         submit_dt = dt,
@@ -311,6 +314,7 @@ namespace DropShipShipmentconfirmations
                 // If ID is 0 there is no EOD to run
                 if (ID == 0)
                 {
+                    Console.WriteLine("There is no End of Day to run right now.");
                     return 1;
                 }
 
@@ -323,6 +327,7 @@ namespace DropShipShipmentconfirmations
                 db.SaveChanges();
 
                 // Run the EOD shipments update to ensure all data is up-to-date
+                Console.WriteLine("Running shipments update. This might take about ten minutes...");
                 db.usp_EOD_Shipments_Update();
 
                 // shipments
