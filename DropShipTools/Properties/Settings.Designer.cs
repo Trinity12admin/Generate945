@@ -58,5 +58,29 @@ namespace DropShipShipmentConfirmations.Properties {
                 this["NextTransactionControlNumber"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int NextBOLNumber {
+            get {
+                return ((int)(this["NextBOLNumber"]));
+            }
+            set {
+                this["NextBOLNumber"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int NextCartonNumber {
+            get {
+                return ((int)(this["NextCartonNumber"]));
+            }
+            set {
+                this["NextCartonNumber"] = value;
+            }
+        }
     }
 }
