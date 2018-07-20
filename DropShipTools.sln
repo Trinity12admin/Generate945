@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27428.2015
+VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DropShipTools", "DropShipTools\DropShipTools.csproj", "{8DB973A9-3FD7-4510-85A4-1AE48FDA2CA5}"
 EndProject
@@ -26,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {34DAE556-8503-48B5-AB1C-F7B575A9A7D5}
+		SolutionGuid = {0EDA603C-4648-4B78-881F-A194AEE3A7B5}
 	EndGlobalSection
 EndGlobal
