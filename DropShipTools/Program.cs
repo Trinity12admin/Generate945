@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using DropShipShipmentConfirmations.Properties;
+using DropShipToolsData;
+using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -7,8 +8,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using DropShipShipmentConfirmations.Properties;
-using DropShipToolsData;
 
 namespace DropShipShipmentConfirmations
 {
@@ -18,8 +17,8 @@ namespace DropShipShipmentConfirmations
         {
             Console.WriteLine(query);
 
-        //    var dbQuery = ConfigurationManager.AppSettings["DBShipmentExportQuery"];
-        //    var dbConnectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
+            // var dbQuery = ConfigurationManager.AppSettings["DBShipmentExportQuery"];
+            // var dbConnectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
 
             using (var dataAdapter = new SqlDataAdapter(query, connectionString))
             {
@@ -47,7 +46,7 @@ namespace DropShipShipmentConfirmations
                                     filename = dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim();
                                 }
 
-                                /* if filename is non-blank and does not match the filename 
+                                /* if filename is non-blank and does not match the filename
                                  * column of the current row, it means we're moving on to the
                                  * next file and need to write out the previous one. */
                                 if ((filename != dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim()) &&
@@ -66,7 +65,7 @@ namespace DropShipShipmentConfirmations
                                  * the last line to be interpreted as a blank row */
                                 if (s.Length > 0)
                                 {
-                                    s.Append(Environment.NewLine); 
+                                    s.Append(Environment.NewLine);
                                 }
 
                                 /* add the current row to the current file string variable s */
@@ -87,7 +86,7 @@ namespace DropShipShipmentConfirmations
                     }
                 }
             }
-        
+
             return true;
         }
 
@@ -126,9 +125,9 @@ namespace DropShipShipmentConfirmations
                                     string podate_s = dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim().Replace(".TXT", string.Empty).Replace("PO_", string.Empty);
                                     DateTime podate_dt = DateTime.ParseExact(podate_s, "yyyyMMdd", CultureInfo.InvariantCulture);
 
-                                    /* if filename does not match the filename 
-                                     * column of the current row, it means we're 
-                                     * moving on to the next file and need to 
+                                    /* if filename does not match the filename
+                                     * column of the current row, it means we're
+                                     * moving on to the next file and need to
                                      * write out the previous one. */
                                     if (filename != dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim())
                                     {
@@ -300,8 +299,8 @@ namespace DropShipShipmentConfirmations
                             var s = new StringBuilder();
                             int ln = 0; // PO item line number
                             int qty = 0; // Total qty shipped per order
+                            int bolNumber = 0; // carton ID / BOL number
                             string filename = string.Empty; // current filename
-                            string prevfilename = string.Empty; // previous filename
                             const string Segterm = "~"; // Segment terminator 0x0A
                             const string Elemsep = "*"; // Element seperator
 
@@ -309,9 +308,9 @@ namespace DropShipShipmentConfirmations
                             //foreach (DataRow dataRow in dataTable.Rows)
                             for (int i = 0; i < dataTable.Rows.Count; i++)
                             {
-                                /* if filename does not match the filename 
-                                 * column of the current row, it means we're 
-                                 * moving on to the next file and need to 
+                                /* if filename does not match the filename
+                                 * column of the current row, it means we're
+                                 * moving on to the next file and need to
                                  * write out the previous one. */
                                 if (filename != dataTable.Rows[i][dataTable.Columns.IndexOf("filename")].ToString().Trim())
                                 {
@@ -324,8 +323,9 @@ namespace DropShipShipmentConfirmations
                                     filename = dataTable.Rows[i][dataTable.Columns.IndexOf("filename")].ToString().Trim();
 
                                     s.Clear();
-                                    ln = 0;
-                                    qty = 0;
+                                    ln = 0; // line number counter
+                                    qty = 0; // running quantity total
+                                    bolNumber = Settings.Default.NextBOLNumber++; // we only want one BOL per shipment
 
                                     s.Append("ISA"); // ISA00
                                     s.Append(Elemsep + "00"); // ISA01
@@ -412,7 +412,7 @@ namespace DropShipShipmentConfirmations
 
                                 s.Append("MAN"); // MAN00
                                 s.Append(Elemsep + "GM"); // MAN01
-                                s.Append(Elemsep + "00006802750" + (Settings.Default.NextBOLNumber++).ToString("00000000", CultureInfo.InvariantCulture).AppendCheckDigit()); // MAN02
+                                s.Append(Elemsep + "00006802750" + (bolNumber).ToString("00000000", CultureInfo.InvariantCulture).AppendCheckDigit()); // MAN02
                                 s.Append(Elemsep); // MAN03
                                 s.Append(Elemsep + "CP"); // MAN04
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim()); // MAN05 -- tracking number not currently implemented
@@ -487,8 +487,6 @@ namespace DropShipShipmentConfirmations
                                     Settings.Default.NextBOLNumber++;
                                     Settings.Default.Save();
                                 }
-
-                                prevfilename = filename;
                             }
 
                             // UTF8 BOM prefix, convert results to byte array
@@ -507,7 +505,7 @@ namespace DropShipShipmentConfirmations
             int success = 0;
 
             // TODO: any kind of error handling at all, papertrail logging
-            
+
             using (var db = new WMS2Entities())
             {
                 // Disable SQL command timeouts
@@ -533,7 +531,7 @@ namespace DropShipShipmentConfirmations
                     .Select(x => x.id)
                     .FirstOrDefault();
 
-                // If the EOD has not run and there is not one to run and it is after 7:30PM, 
+                // If the EOD has not run and there is not one to run and it is after 7:30PM,
                 // insert a record and use that as today's EOD
                 if (!hasrun && ID == 0 && dt.TimeOfDay > new TimeSpan(hours: 19, minutes: 30, seconds: 0))
                 {
@@ -608,8 +606,7 @@ namespace DropShipShipmentConfirmations
                 // Update the completed_dt
                 de.completed_dt = DateTime.Now;
                 db.SaveChanges();
-            }             
-
+            }
 
             return success; // 0 = good, non-zero = bad
         }
