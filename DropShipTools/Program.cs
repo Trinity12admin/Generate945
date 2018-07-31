@@ -299,6 +299,7 @@ namespace DropShipShipmentConfirmations
                             var s = new StringBuilder();
                             int ln = 0; // PO item line number
                             int qty = 0; // Total qty shipped per order
+                            int seg = 0; // segment line number, from and including ST to SE
                             int bolNumber = 0; // carton ID / BOL number
                             string filename = string.Empty; // current filename
                             const string Segterm = "~"; // Segment terminator 0x0A
@@ -325,6 +326,7 @@ namespace DropShipShipmentConfirmations
                                     s.Clear();
                                     ln = 0; // line number counter
                                     qty = 0; // running quantity total
+                                    seg = 0; // segment line number
                                     bolNumber = Settings.Default.NextBOLNumber++; // we only want one BOL per shipment
 
                                     s.Append("ISA"); // ISA00
@@ -357,11 +359,13 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + "004010"); // GS08
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("ST"); // ST00
                                     s.Append(Elemsep + "945"); // ST01
                                     s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // ST02
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("W06"); // W0600
                                     s.Append(Elemsep + "N"); // W0601
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0602")].ToString().Trim()); // W0602
@@ -373,6 +377,7 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0608")].ToString().Trim()); // W0608
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("N1"); // N100 ship-to segment
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST01")].ToString().Trim()); // N101
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST02")].ToString().Trim()); // N102
@@ -380,6 +385,7 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST04")].ToString().Trim()); // N104
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("N1"); // N100 ship-from segment
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF01")].ToString().Trim()); // N101
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF02")].ToString().Trim()); // N102
@@ -387,11 +393,13 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF04")].ToString().Trim()); // N104
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("G62"); // G6200
                                     s.Append(Elemsep + "10"); // G6201
                                     s.Append(Elemsep + DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // G6202
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("W27"); // W2700
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W2701")].ToString().Trim()); // W2701
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W2702")].ToString().Trim()); // W2702
@@ -403,21 +411,24 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + "CC"); // W2708 -- Partial shipments are not currently implemented
                                     s.Append(Elemsep); // W2709
                                     s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("LX"); // LX00
+                                    s.Append(Elemsep + ++ln); // LX01
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("MAN"); // MAN00
+                                    s.Append(Elemsep + "GM"); // MAN01
+                                    s.Append(Elemsep + "00006802750" + (bolNumber).ToString("00000000", CultureInfo.InvariantCulture).AppendCheckDigit()); // MAN02
+                                    s.Append(Elemsep); // MAN03
+                                    s.Append(Elemsep + "CP"); // MAN04
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim()); // MAN05
+                                    s.Append(Segterm);
                                 }
 
                                 /* add the current item row data to the current file string variable s */
-                                s.Append("LX"); // LX00
-                                s.Append(Elemsep + ++ln); // LX01
-                                s.Append(Segterm);
-
-                                s.Append("MAN"); // MAN00
-                                s.Append(Elemsep + "GM"); // MAN01
-                                s.Append(Elemsep + "00006802750" + (bolNumber).ToString("00000000", CultureInfo.InvariantCulture).AppendCheckDigit()); // MAN02
-                                s.Append(Elemsep); // MAN03
-                                s.Append(Elemsep + "CP"); // MAN04
-                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim()); // MAN05 -- tracking number not currently implemented
-                                s.Append(Segterm);
-
+                                seg++;
                                 s.Append("W12"); // W1200
                                 s.Append(Elemsep + "SH"); // W1201
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1202")].ToString().Trim()); // W1202
@@ -453,6 +464,7 @@ namespace DropShipShipmentConfirmations
 
                                 if (isEof)
                                 {
+                                    seg++;
                                     s.Append("W03"); // W300
                                     s.Append(Elemsep + qty); // W301
                                     s.Append(Elemsep + (qty * 2)); // W302
@@ -463,8 +475,9 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + "CT"); // W307
                                     s.Append(Segterm);
 
+                                    seg++;
                                     s.Append("SE"); // SE00
-                                    s.Append(Elemsep + ((ln * 3) + 8)); // SE01
+                                    s.Append(Elemsep + seg); // SE01
                                     s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // SE02 same as ST02
                                     s.Append(Segterm);
 
