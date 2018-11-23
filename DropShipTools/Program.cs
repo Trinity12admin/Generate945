@@ -580,11 +580,13 @@ namespace DropShipShipmentConfirmations
                 Console.WriteLine("Running shipments update. This might take about ten minutes...");
                 db.usp_EOD_Shipments_Update();
 
+                /*
                 // shipments (flat file)
                 success += GenerateFlatFileExport(
                     ConfigurationManager.AppSettings["DBShipmentExportQuery"],
                     ConfigurationManager.AppSettings["DBConnectionStringT12"],
                     ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+                    */
 
                 // inventory (flat file)
                 success += GenerateFlatFileExport(
@@ -604,11 +606,13 @@ namespace DropShipShipmentConfirmations
                     ConfigurationManager.AppSettings["DBConnectionStringRBI"],
                     ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
 
+                /*
                 // Drop ship shipments (flat file)
                 success += GenerateFlatFileExport(
                     ConfigurationManager.AppSettings["DBPOShipmentExportQuery"],
                     ConfigurationManager.AppSettings["DBConnectionStringRBI"],
                     ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+                    */
 
                 // Drop ship shipments (945)
                 success += GenerateShipment945Export(
