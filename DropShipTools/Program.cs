@@ -186,6 +186,11 @@ namespace DropShipShipmentConfirmations
                                         s.Append(Segterm);
 
                                         s.Append("DTM"); // DTM00
+                                        s.Append(Elemsep + "001"); // DTM01
+                                        s.Append(Elemsep + podate_dt.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // DTM02
+                                        s.Append(Segterm);
+
+                                        s.Append("DTM"); // DTM00
                                         s.Append(Elemsep + "010"); // DTM01
                                         s.Append(Elemsep + podate_dt.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // DTM02
                                         s.Append(Segterm);
@@ -513,6 +518,250 @@ namespace DropShipShipmentConfirmations
             return true;
         }
 
+        private static bool GenerateShipment945ExportZulily(string query, string connectionString, string pathForExport)
+        {
+            Console.WriteLine(query);
+
+            using (var dataAdapter = new SqlDataAdapter(query, connectionString))
+            {
+                dataAdapter.SelectCommand.CommandTimeout = 0; // disable SQL timeout
+
+                using (var dataSet = new DataSet())
+                {
+                    dataSet.Locale = System.Globalization.CultureInfo.InvariantCulture;
+
+                    dataAdapter.Fill(dataSet);
+
+                    for (int tbl = 0; tbl < dataSet.Tables.Count; tbl++)
+                    {
+                        using (var dataTable = dataSet.Tables[tbl])
+                        {
+                            var s = new StringBuilder();
+                            int ln = 0; // PO item line number
+                            int qty = 0; // Total qty shipped per order
+                            int seg = 0; // segment line number, from and including ST to SE
+                            int bolNumber = 0; // carton ID / BOL number
+                            string filename = string.Empty; // current filename
+                            string tracknum = string.Empty; // current tracking number/carton number
+                            const string Segterm = "\n"; // Segment terminator 0x0A
+                            const string Elemsep = "*"; // Element seperator
+
+                            // result set
+                            //foreach (DataRow dataRow in dataTable.Rows)
+                            for (int i = 0; i < dataTable.Rows.Count; i++)
+                            {
+                                /* if filename does not match the filename
+                                 * column of the current row, it means we're
+                                 * moving on to the next file and need to
+                                 * write out the previous one. */
+                                if (filename != dataTable.Rows[i][dataTable.Columns.IndexOf("filename")].ToString().Trim())
+                                {
+                                    if (!string.IsNullOrEmpty(filename))
+                                    {
+                                        Console.WriteLine("Writing: " + pathForExport + filename);
+                                        File.WriteAllText(pathForExport + filename, s.ToString());
+                                    }
+
+                                    filename = dataTable.Rows[i][dataTable.Columns.IndexOf("filename")].ToString().Trim();
+
+                                    s.Clear();
+                                    ln = 0; // line number counter
+                                    qty = 0; // running quantity total
+                                    seg = 0; // segment line number
+
+                                    s.Append("ISA"); // ISA00
+                                    s.Append(Elemsep + "00"); // ISA01
+                                    s.Append(Elemsep + "          "); // ISA02
+                                    s.Append(Elemsep + "00"); // ISA03
+                                    s.Append(Elemsep + "          "); // ISA04
+                                    s.Append(Elemsep + "12"); // ISA05
+                                    s.Append(Elemsep + "6366802750     "); // ISA06
+                                    s.Append(Elemsep + "12"); // ISA07
+                                    s.Append(Elemsep + "6363439914     "); // ISA08
+                                    s.Append(Elemsep + DateTime.Now.ToString("yyMMdd", CultureInfo.InvariantCulture)); // ISA09
+                                    s.Append(Elemsep + DateTime.Now.ToString("HHmm", CultureInfo.InvariantCulture)); // ISA10
+                                    s.Append(Elemsep + "U"); // ISA11
+                                    s.Append(Elemsep + "00401"); // ISA12
+                                    s.Append(Elemsep + Settings.Default.NextInterchangeControlNumber.ToString("000000000", CultureInfo.InvariantCulture)); // ISA13
+                                    s.Append(Elemsep + "0"); // ISA14
+                                    s.Append(Elemsep + "P"); // ISA15  T=Test P=Production
+                                    s.Append(Elemsep + ">"); // ISA16
+                                    s.Append(Segterm);
+
+                                    s.Append("GS"); // GS00
+                                    s.Append(Elemsep + "SW"); // GS01
+                                    s.Append(Elemsep + "6366802750     "); // GS02
+                                    s.Append(Elemsep + "6363439914     "); // GS03
+                                    s.Append(Elemsep + DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // GS04
+                                    s.Append(Elemsep + DateTime.Now.ToString("HHmm", CultureInfo.InvariantCulture)); // GS05
+                                    s.Append(Elemsep + Settings.Default.NextGroupControlNumber.ToString("0", CultureInfo.InvariantCulture)); // GS06
+                                    s.Append(Elemsep + "X"); // GS07
+                                    s.Append(Elemsep + "004010"); // GS08
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("ST"); // ST00
+                                    s.Append(Elemsep + "945"); // ST01
+                                    s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // ST02
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("W06"); // W0600
+                                    s.Append(Elemsep + "N"); // W0601
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0602")].ToString().Trim()); // W0602
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0603")].ToString().Trim()); // W0603
+                                    s.Append(Elemsep + ("6366802750" + Settings.Default.NextBOLNumber.ToString("0000000", CultureInfo.InvariantCulture)).AppendCheckDigit()); // W0604
+                                    s.Append(Elemsep); // W0605
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0606")].ToString().Trim()); // W0606
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0607")].ToString().Trim()); // W0607
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W0608")].ToString().Trim()); // W0608
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("N1"); // N100 ship-to segment
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST01")].ToString().Trim()); // N101
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST02")].ToString().Trim()); // N102
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST03")].ToString().Trim()); // N103
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1ST04")].ToString().Trim()); // N104
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("N1"); // N100 ship-from segment
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF01")].ToString().Trim()); // N101
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF02")].ToString().Trim()); // N102
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF03")].ToString().Trim()); // N103
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N1SF04")].ToString().Trim()); // N104
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("G62"); // G6200
+                                    s.Append(Elemsep + "10"); // G6201
+                                    s.Append(Elemsep + DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // G6202
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("W27"); // W2700
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W2701")].ToString().Trim()); // W2701
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W2702")].ToString().Trim()); // W2702
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W2703")].ToString().Trim()); // W2703
+                                    s.Append(Elemsep + "CC"); // W2704
+                                    s.Append(Elemsep); // W2705
+                                    s.Append(Elemsep); // W2706
+                                    s.Append(Elemsep); // W2707
+                                    s.Append(Elemsep + "CC"); // W2708 -- Partial shipments are not currently implemented
+                                    s.Append(Elemsep); // W2709
+                                    s.Append(Segterm);
+                                }
+
+                                /* if we've got a new tracking number, write new LX/MAN segments */
+                                /* this ASSUMES the data from SQL is grouped by carton and sorted by tracking number */
+                                if (tracknum != dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim())
+                                {
+                                    bolNumber = Settings.Default.NextBOLNumber++; // new BOL per carton
+
+                                    seg++;
+                                    s.Append("LX"); // LX00
+                                    s.Append(Elemsep + ++ln); // LX01
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("MAN"); // MAN00
+                                    s.Append(Elemsep + "GM"); // MAN01
+                                    s.Append(Elemsep + "00006802750" + (bolNumber).ToString("00000000", CultureInfo.InvariantCulture).AppendCheckDigit()); // MAN02
+                                    s.Append(Elemsep); // MAN03
+                                    s.Append(Elemsep + "CP"); // MAN04
+                                    s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim()); // MAN05
+                                    s.Append(Segterm);
+                                }
+
+                                tracknum = dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim();
+
+                                /* add the current item row data to the current file string variable s */
+                                seg++;
+                                s.Append("W12"); // W1200
+                                s.Append(Elemsep + "SH"); // W1201
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1202")].ToString().Trim()); // W1202
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")].ToString().Trim()); // W1203
+                                qty += Convert.ToInt32(dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")]); // running qty total
+                                s.Append(Elemsep); // W1204
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1205")].ToString().Trim()); // W1205
+                                s.Append(Elemsep); // W1206
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1207")].ToString().Trim()); // W1207
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1208")].ToString().Trim()); // W1208
+                                s.Append(Elemsep); // W1209
+                                s.Append(Elemsep + "2"); // W1210
+                                s.Append(Elemsep + "G"); // W1211
+                                s.Append(Elemsep + "L"); // W1212
+                                s.Append(Elemsep); // W1213
+                                s.Append(Elemsep); // W1214
+                                s.Append(Elemsep); // W1215
+                                s.Append(Elemsep); // W1216
+                                s.Append(Elemsep); // W1217
+                                s.Append(Elemsep); // W1218
+                                s.Append(Elemsep); // W1219
+                                s.Append(Elemsep); // W1220
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1221")].ToString().Trim()); // W1221
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1222")].ToString().Trim()); // W1222
+                                s.Append(Segterm);
+
+                                bool isEof = false;
+                                isEof = i == dataTable.Rows.Count - 1;
+                                if (!isEof)
+                                {
+                                    isEof = filename != dataTable.Rows[i + 1][dataTable.Columns.IndexOf("filename")].ToString().Trim();
+                                }
+
+                                if (isEof)
+                                {
+                                    seg++;
+                                    s.Append("W03"); // W300
+                                    s.Append(Elemsep + qty); // W301
+                                    s.Append(Elemsep + (qty * 2)); // W302
+                                    s.Append(Elemsep + "LB"); // W303
+                                    s.Append(Elemsep); // W304
+                                    s.Append(Elemsep); // W305
+                                    s.Append(Elemsep + ln); // W306
+                                    s.Append(Elemsep + "CT"); // W307
+                                    s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("SE"); // SE00
+                                    s.Append(Elemsep + seg); // SE01
+                                    s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // SE02 same as ST02
+                                    s.Append(Segterm);
+
+                                    s.Append("GE"); // GE00
+                                    s.Append(Elemsep + "1"); // GE01
+                                    s.Append(Elemsep + Settings.Default.NextGroupControlNumber.ToString("0", CultureInfo.InvariantCulture)); // GE02 same as GS06
+                                    s.Append(Segterm);
+
+                                    s.Append("IEA"); // IEA00
+                                    s.Append(Elemsep + "1"); // IEA01
+                                    s.Append(Elemsep + Settings.Default.NextInterchangeControlNumber.ToString("000000000", CultureInfo.InvariantCulture)); // IEA02 same as ISA13
+                                    s.Append(Segterm);
+
+                                    Console.WriteLine("Writing: " + pathForExport + filename);
+                                    File.WriteAllText(pathForExport + filename, s.ToString());
+
+                                    Settings.Default.NextTransactionControlNumber++;
+                                    Settings.Default.NextGroupControlNumber++;
+                                    Settings.Default.NextInterchangeControlNumber++;
+                                    Settings.Default.NextBOLNumber++;
+                                    Settings.Default.Save();
+                                }
+                            }
+
+                            // UTF8 BOM prefix, convert results to byte array
+                            //byte[] bom = {0xEF, 0xBB, 0xBF};
+                            //byte[] buffer = bom.Concat(Encoding.UTF8.GetBytes(s.ToString())).ToArray();
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
         private static int Main()
         {
             int success = 0;
@@ -624,6 +873,12 @@ namespace DropShipShipmentConfirmations
                 de.completed_dt = DateTime.Now;
                 db.SaveChanges();
             }
+
+            // Zulily cartons (945)
+            //success += GenerateShipment945ExportZulily(
+            //    ConfigurationManager.AppSettings["DB945ExportQueryZulily"],
+            //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
+            //    ConfigurationManager.AppSettings["PathForZulilyExport"]) ? 0 : 1;
 
             return success; // 0 = good, non-zero = bad
         }
