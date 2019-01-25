@@ -246,7 +246,8 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Segterm);
 
                                     s.Append("SE"); // SE00
-                                    s.Append(Elemsep + (ln + 7)); // SE01
+                                    // TODO: Change ln to be calculated properly instead if using a magic number.
+                                    s.Append(Elemsep + (ln + 8)); // SE01
                                     s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // SE02 same as ST02
                                     s.Append(Segterm);
 
