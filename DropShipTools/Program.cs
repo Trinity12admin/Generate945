@@ -230,8 +230,8 @@ namespace DropShipShipmentConfirmations
                                         ShipDate = podate_dt,
                                         CancelDate = podate_dt.AddMonths(3),
                                         SKU = dataRow[dataTable.Columns.IndexOf("upc")].ToString().Trim(),
-                                        Quantity = int.Parse(dataRow[dataTable.Columns.IndexOf("qty")].ToString().Trim()),
-                                        UnitCost = decimal.Parse(dataRow[dataTable.Columns.IndexOf("cost")].ToString().Trim()),
+                                        Quantity = int.Parse(dataRow[dataTable.Columns.IndexOf("qty")].ToString().Trim(), CultureInfo.InvariantCulture),
+                                        UnitCost = decimal.Parse(dataRow[dataTable.Columns.IndexOf("cost")].ToString().Trim(), CultureInfo.InvariantCulture),
                                         Timestamp = DateTime.Now
                                     };
 
@@ -439,7 +439,7 @@ namespace DropShipShipmentConfirmations
                                 s.Append(Elemsep + "SH"); // W1201
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1202")].ToString().Trim()); // W1202
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")].ToString().Trim()); // W1203
-                                qty += Convert.ToInt32(dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")]); // running qty total
+                                qty += Convert.ToInt32(dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")], CultureInfo.InvariantCulture); // running qty total
                                 s.Append(Elemsep); // W1204
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1205")].ToString().Trim()); // W1205
                                 s.Append(Elemsep); // W1206
@@ -519,7 +519,7 @@ namespace DropShipShipmentConfirmations
             return true;
         }
 
-        private static bool GenerateShipment945ExportZulily(string query, string connectionString, string pathForExport)
+        private static bool GenerateShipment945ExportWeb(string query, string connectionString, string pathForExport)
         {
             Console.WriteLine(query);
 
@@ -569,6 +569,7 @@ namespace DropShipShipmentConfirmations
                                     ln = 0; // line number counter
                                     qty = 0; // running quantity total
                                     seg = 0; // segment line number
+                                    bolNumber = Settings.Default.NextBOLNumber++; // we only want one BOL per shipment
 
                                     s.Append("ISA"); // ISA00
                                     s.Append(Elemsep + "00"); // ISA01
@@ -683,7 +684,7 @@ namespace DropShipShipmentConfirmations
                                 s.Append(Elemsep + "SH"); // W1201
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1202")].ToString().Trim()); // W1202
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")].ToString().Trim()); // W1203
-                                qty += Convert.ToInt32(dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")]); // running qty total
+                                qty += Convert.ToInt32(dataTable.Rows[i][dataTable.Columns.IndexOf("W1203")], CultureInfo.InvariantCulture); // running qty total
                                 s.Append(Elemsep); // W1204
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1205")].ToString().Trim()); // W1205
                                 s.Append(Elemsep); // W1206
@@ -768,7 +769,7 @@ namespace DropShipShipmentConfirmations
             int success = 0;
 
             // TODO: any kind of error handling at all, papertrail logging
-
+            
             using (var db = new WMS2Entities())
             {
                 // Disable SQL command timeouts
@@ -827,16 +828,14 @@ namespace DropShipShipmentConfirmations
                 db.SaveChanges();
 
                 // Run the EOD shipments update to ensure all data is up-to-date
-                Console.WriteLine("Running shipments update. This might take about ten minutes...");
+                Console.WriteLine("Running shipments update. This might take a few minutes...");
                 db.usp_EOD_Shipments_Update();
 
-                /*
                 // shipments (flat file)
-                success += GenerateFlatFileExport(
-                    ConfigurationManager.AppSettings["DBShipmentExportQuery"],
-                    ConfigurationManager.AppSettings["DBConnectionStringT12"],
-                    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
-                    */
+                //success += GenerateFlatFileExport(
+                //    ConfigurationManager.AppSettings["DBShipmentExportQuery"],
+                //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
+                //    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
 
                 // inventory (flat file)
                 success += GenerateFlatFileExport(
@@ -856,13 +855,13 @@ namespace DropShipShipmentConfirmations
                     ConfigurationManager.AppSettings["DBConnectionStringRBI"],
                     ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
 
-                /*
-                // Drop ship shipments (flat file)
-                success += GenerateFlatFileExport(
-                    ConfigurationManager.AppSettings["DBPOShipmentExportQuery"],
-                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
-                    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
-                    */
+                
+                //// Drop ship shipments (flat file)
+                //success += GenerateFlatFileExport(
+                //    ConfigurationManager.AppSettings["DBPOShipmentExportQuery"],
+                //    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                //    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+                    
 
                 // Drop ship shipments (945)
                 success += GenerateShipment945Export(
@@ -874,9 +873,21 @@ namespace DropShipShipmentConfirmations
                 de.completed_dt = DateTime.Now;
                 db.SaveChanges();
             }
+            
+            //// Drop ship shipments (945)
+            //success += GenerateShipment945Export(
+            //    ConfigurationManager.AppSettings["DB945ExportQuery"],
+            //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
+            //    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
 
-            // Zulily cartons (945)
-            //success += GenerateShipment945ExportZulily(
+            //// Web cartons(945)
+            //success += GenerateShipment945ExportWeb(
+            //    ConfigurationManager.AppSettings["DB945ExportQueryWeb"],
+            //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
+            //    ConfigurationManager.AppSettings["PathForWebExport"]) ? 0 : 1;
+
+            //// Zulily cartons(945)
+            //success += GenerateShipment945ExportWeb(
             //    ConfigurationManager.AppSettings["DB945ExportQueryZulily"],
             //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
             //    ConfigurationManager.AppSettings["PathForZulilyExport"]) ? 0 : 1;

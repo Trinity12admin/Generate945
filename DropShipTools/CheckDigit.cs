@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 
 // from https://stackoverflow.com/a/23640453
-
+[assembly: CLSCompliant(true)]
 namespace DropShipShipmentConfirmations
 {
     public static class CheckDigitExtension
@@ -20,6 +20,10 @@ namespace DropShipShipmentConfirmations
         /// <returns>the check digit</returns>
         public static int CheckDigit(this IList<int> digits)
         {
+            if (digits == null)
+            {
+                throw new ArgumentNullException(nameof(digits));
+            }
             var i = 0;
             var lengthMod = digits.Count % 2;
             return (digits.Sum(d => i++ % 2 == lengthMod ? d : Results[d]) * 9) % 10;
@@ -32,6 +36,10 @@ namespace DropShipShipmentConfirmations
         /// <returns>the new list of digits including checkdigit</returns>
         public static IList<int> AppendCheckDigit(this IList<int> digits)
         {
+            if (digits == null)
+            {
+                throw new ArgumentNullException(nameof(digits));
+            }
             var result = digits;
             result.Add(digits.CheckDigit());
             return result;
@@ -44,6 +52,10 @@ namespace DropShipShipmentConfirmations
         /// <returns>true/false depending on valid checkdigit</returns>
         public static bool HasValidCheckDigit(this IList<int> digits)
         {
+            if (digits == null)
+            {
+                throw new ArgumentNullException(nameof(digits));
+            }
             return digits.Last() == CheckDigit(digits.Take(digits.Count - 1).ToList());
         }
 
