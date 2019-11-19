@@ -108,3 +108,7 @@ Backup*/
 UpgradeLog*.XML
 /.vs/DropShipTools/v15
 /DropShipTools/.vs/DropShipTools/v15/Server/sqlite3
+/.vs/DropShipTools/v16/Server/sqlite3/db.lock
+/.vs/DropShipTools/v16/Server/sqlite3/storage.ide-wal
+/.vs/DropShipTools/v16/Server/sqlite3/storage.ide-shm
+/.vs/DropShipTools/v16/Server/sqlite3/storage.ide

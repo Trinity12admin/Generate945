@@ -431,6 +431,12 @@ namespace DropShipShipmentConfirmations
                                     s.Append(Elemsep + "CP"); // MAN04
                                     s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("MAN05")].ToString().Trim()); // MAN05
                                     s.Append(Segterm);
+
+                                    seg++;
+                                    s.Append("N9"); // N900
+                                    s.Append(Elemsep + "CTC"); // N901
+                                    s.Append(Elemsep + "A"); // N902
+                                    s.Append(Segterm);
                                 }
 
                                 /* add the current item row data to the current file string variable s */
@@ -459,6 +465,12 @@ namespace DropShipShipmentConfirmations
                                 s.Append(Elemsep); // W1220
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1221")].ToString().Trim()); // W1221
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1222")].ToString().Trim()); // W1222
+                                s.Append(Segterm);
+
+                                seg++;
+                                s.Append("N9"); // N900
+                                s.Append(Elemsep + "PV"); // N901
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N902")].ToString().Trim()); // N902
                                 s.Append(Segterm);
 
                                 bool isEof = false;
@@ -544,7 +556,7 @@ namespace DropShipShipmentConfirmations
                             int bolNumber = 0; // carton ID / BOL number
                             string filename = string.Empty; // current filename
                             string tracknum = string.Empty; // current tracking number/carton number
-                            const string Segterm = "\n"; // Segment terminator 0x0A
+                            const string Segterm = "~"; // Segment terminator 0x0A
                             const string Elemsep = "*"; // Element seperator
 
                             // result set
@@ -769,7 +781,7 @@ namespace DropShipShipmentConfirmations
             int success = 0;
 
             // TODO: any kind of error handling at all, papertrail logging
-            
+            /*
             using (var db = new WMS2Entities())
             {
                 // Disable SQL command timeouts
@@ -873,12 +885,12 @@ namespace DropShipShipmentConfirmations
                 de.completed_dt = DateTime.Now;
                 db.SaveChanges();
             }
-            
-            //// Drop ship shipments (945)
-            //success += GenerateShipment945Export(
-            //    ConfigurationManager.AppSettings["DB945ExportQuery"],
-            //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
-            //    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+            */
+            // Drop ship shipments (945)
+            success += GenerateShipment945Export(
+                ConfigurationManager.AppSettings["DB945ExportQuery"],
+                ConfigurationManager.AppSettings["DBConnectionStringT12"],
+                ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
 
             //// Web cartons(945)
             //success += GenerateShipment945ExportWeb(
@@ -886,7 +898,7 @@ namespace DropShipShipmentConfirmations
             //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
             //    ConfigurationManager.AppSettings["PathForWebExport"]) ? 0 : 1;
 
-            //// Zulily cartons(945)
+            // Zulily cartons(945)
             //success += GenerateShipment945ExportWeb(
             //    ConfigurationManager.AppSettings["DB945ExportQueryZulily"],
             //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
