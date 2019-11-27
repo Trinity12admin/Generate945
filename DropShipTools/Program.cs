@@ -284,6 +284,200 @@ namespace DropShipShipmentConfirmations
             return true;
         }
 
+        private static bool GeneratePO850ExportCloseout(string query, string connectionString, string pathForExport)
+        {
+            Console.WriteLine(query);
+
+            //    var dbQuery = ConfigurationManager.AppSettings["DBShipmentExportQuery"];
+            //    var dbConnectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
+
+            using (var dataAdapter = new SqlDataAdapter(query, connectionString))
+            {
+                dataAdapter.SelectCommand.CommandTimeout = 0; // disable SQL timeout
+
+                using (var dataSet = new DataSet())
+                {
+                    dataSet.Locale = System.Globalization.CultureInfo.InvariantCulture;
+
+                    dataAdapter.Fill(dataSet);
+
+                    using (var db = new FUIXWEBEntities())
+                    {
+                        for (int tbl = 0; tbl < dataSet.Tables.Count; tbl++)
+                        {
+                            using (var dataTable = dataSet.Tables[tbl])
+                            {
+                                var s = new StringBuilder();
+                                int ln = 0; // PO item line number
+                                string filename = string.Empty;
+                                const string Segterm = "\n"; // Segment terminator 0x0A
+                                const string Elemsep = "|"; // Element seperator
+
+                                // result set
+                                foreach (DataRow dataRow in dataTable.Rows)
+                                {
+                                    string podate_s = dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim().Replace(".TXT", string.Empty).Replace("PO_X", string.Empty);
+                                    DateTime podate_dt = DateTime.ParseExact(podate_s, "yyyyMMdd", CultureInfo.InvariantCulture);
+
+                                    /* if filename does not match the filename
+                                     * column of the current row, it means we're
+                                     * moving on to the next file and need to
+                                     * write out the previous one. */
+                                    if (filename != dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim())
+                                    {
+                                        if (!string.IsNullOrEmpty(filename))
+                                        {
+                                            Console.WriteLine("Writing: " + pathForExport + filename);
+                                            File.WriteAllText(pathForExport + filename, s.ToString());
+                                        }
+
+                                        filename = dataRow[dataTable.Columns.IndexOf("filename")].ToString().Trim();
+
+                                        s.Clear();
+                                        ln = 0;
+
+                                        s.Append("ISA"); // ISA00
+                                        s.Append(Elemsep + "00"); // ISA01
+                                        s.Append(Elemsep + "          "); // ISA02
+                                        s.Append(Elemsep + "00"); // ISA03
+                                        s.Append(Elemsep + "          "); // ISA04
+                                        s.Append(Elemsep + "12"); // ISA05
+                                        s.Append(Elemsep + "6366802751     "); // ISA06
+                                        s.Append(Elemsep + "12"); // ISA07
+                                        s.Append(Elemsep + "6363439914     "); // ISA08
+                                        s.Append(Elemsep + DateTime.Now.ToString("yyMMdd", CultureInfo.InvariantCulture)); // ISA09
+                                        s.Append(Elemsep + DateTime.Now.ToString("HHmm", CultureInfo.InvariantCulture)); // ISA10
+                                        s.Append(Elemsep + "U"); // ISA11
+                                        s.Append(Elemsep + "00401"); // ISA12
+                                        s.Append(Elemsep + Settings.Default.NextInterchangeControlNumber.ToString("000000000", CultureInfo.InvariantCulture)); // ISA13
+                                        s.Append(Elemsep + "0"); // ISA14
+                                        s.Append(Elemsep + "P"); // ISA15  T=Test P=Production
+                                        s.Append(Elemsep + ">"); // ISA16
+                                        s.Append(Segterm);
+
+                                        s.Append("GS"); // GS00
+                                        s.Append(Elemsep + "PO"); // GS01
+                                        s.Append(Elemsep + "6366802751"); // GS02
+                                        s.Append(Elemsep + "6363439914"); // GS03
+                                        s.Append(Elemsep + DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // GS04
+                                        s.Append(Elemsep + DateTime.Now.ToString("HHmm", CultureInfo.InvariantCulture)); // GS05
+                                        s.Append(Elemsep + Settings.Default.NextGroupControlNumber.ToString("0", CultureInfo.InvariantCulture)); // GS06
+                                        s.Append(Elemsep + "X"); // GS07
+                                        s.Append(Elemsep + "004010"); // GS08
+                                        s.Append(Segterm);
+
+                                        s.Append("ST"); // ST00
+                                        s.Append(Elemsep + "850"); // ST01
+                                        s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // ST02
+                                        s.Append(Segterm);
+
+                                        s.Append("BEG"); // BEG00
+                                        s.Append(Elemsep + "00"); // BEG01
+                                        s.Append(Elemsep + "SA"); // BEG02
+                                        s.Append(Elemsep + "FU-DS-X" + podate_dt.ToString("yyMMdd", CultureInfo.InvariantCulture)); // BEG03
+                                        s.Append(Elemsep); // BEG04
+                                        s.Append(Elemsep + podate_dt.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // BEG05
+                                        s.Append(Segterm);
+
+                                        s.Append("DTM"); // DTM00
+                                        s.Append(Elemsep + "001"); // DTM01
+                                        s.Append(Elemsep + podate_dt.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // DTM02
+                                        s.Append(Segterm);
+
+                                        s.Append("DTM"); // DTM00
+                                        s.Append(Elemsep + "010"); // DTM01
+                                        s.Append(Elemsep + podate_dt.ToString("yyyyMMdd", CultureInfo.InvariantCulture)); // DTM02
+                                        s.Append(Segterm);
+
+                                        s.Append("N1"); // N100 bill-to segment
+                                        s.Append(Elemsep + "BT"); // N101
+                                        s.Append(Elemsep + "TRINITY"); // N102
+                                        s.Append(Elemsep + "91"); // N103
+                                        s.Append(Elemsep + "314665"); // N104
+                                        s.Append(Segterm);
+
+                                        s.Append("N1"); // N100 ship-to segment
+                                        s.Append(Elemsep + "ST"); // N101
+                                        s.Append(Elemsep + "TRINITY"); // N102
+                                        s.Append(Elemsep + "91"); // N103
+                                        s.Append(Elemsep + "314665"); // N104
+                                        s.Append(Segterm);
+                                    }
+
+                                    /* add the current row to the current file string variable s */
+                                    s.Append("PO1"); // PO00
+                                    s.Append(Elemsep + (++ln)); // PO101
+                                    s.Append(Elemsep + dataRow[dataTable.Columns.IndexOf("qty")].ToString().Trim()); // PO102
+                                    s.Append(Elemsep + "EA"); // PO103
+                                    s.Append(Elemsep + float.Parse(dataRow[dataTable.Columns.IndexOf("cost")].ToString().Trim(), CultureInfo.InvariantCulture).ToString("0.00", CultureInfo.InvariantCulture)); // PO104
+                                    s.Append(Elemsep); // PO105
+                                    s.Append(Elemsep + "UP"); // PO106
+                                    s.Append(Elemsep + dataRow[dataTable.Columns.IndexOf("upc")].ToString().Trim()); // PO107
+                                    s.Append(Segterm);
+
+                                    FUI_POImport p = new FUI_POImport
+                                    {
+                                        Company = "FUI",
+                                        PO_ = "FU-DS-X" + podate_s,
+                                        VendorID = "FUI",
+                                        PODate = podate_dt,
+                                        ShipDate = podate_dt,
+                                        CancelDate = podate_dt.AddMonths(3),
+                                        SKU = dataRow[dataTable.Columns.IndexOf("upc")].ToString().Trim(),
+                                        Quantity = int.Parse(dataRow[dataTable.Columns.IndexOf("qty")].ToString().Trim(), CultureInfo.InvariantCulture),
+                                        UnitCost = decimal.Parse(dataRow[dataTable.Columns.IndexOf("cost")].ToString().Trim(), CultureInfo.InvariantCulture),
+                                        Timestamp = DateTime.Now
+                                    };
+
+                                    db.FUI_POImport.Add(p);
+                                }
+
+                                /* write out the last file from the current table */
+                                if ((s.Length > 0) && (filename.Length > 0))
+                                {
+                                    s.Append("CTT"); // CTT00
+                                    s.Append(Elemsep + ln); // CTT01
+                                    s.Append(Segterm);
+
+                                    s.Append("SE"); // SE00
+                                    // TODO: Change ln to be calculated properly instead if using a magic number.
+                                    s.Append(Elemsep + (ln + 8)); // SE01
+                                    s.Append(Elemsep + Settings.Default.NextTransactionControlNumber.ToString("0000", CultureInfo.InvariantCulture)); // SE02 same as ST02
+                                    s.Append(Segterm);
+
+                                    s.Append("GE"); // GE00
+                                    s.Append(Elemsep + "1"); // GE01
+                                    s.Append(Elemsep + Settings.Default.NextGroupControlNumber.ToString("0", CultureInfo.InvariantCulture)); // GE02 same as GS06
+                                    s.Append(Segterm);
+
+                                    s.Append("IEA"); // IEA00
+                                    s.Append(Elemsep + "1"); // IEA01
+                                    s.Append(Elemsep + Settings.Default.NextInterchangeControlNumber.ToString("000000000", CultureInfo.InvariantCulture)); // IEA02 same as ISA13
+                                    s.Append(Segterm);
+
+                                    Console.WriteLine("Writing: " + pathForExport + filename);
+                                    File.WriteAllText(pathForExport + filename, s.ToString());
+
+                                    Settings.Default.NextTransactionControlNumber++;
+                                    Settings.Default.NextGroupControlNumber++;
+                                    Settings.Default.NextInterchangeControlNumber++;
+                                    Settings.Default.Save();
+                                }
+
+                                // UTF8 BOM prefix, convert results to byte array
+                                //byte[] bom = {0xEF, 0xBB, 0xBF};
+                                //byte[] buffer = bom.Concat(Encoding.UTF8.GetBytes(s.ToString())).ToArray();
+                            }
+                        }
+
+                        db.SaveChanges();
+                    }
+                }
+            }
+
+            return true;
+        }
+
         private static bool GenerateShipment945Export(string query, string connectionString, string pathForExport)
         {
             Console.WriteLine(query);
@@ -781,7 +975,7 @@ namespace DropShipShipmentConfirmations
             int success = 0;
 
             // TODO: any kind of error handling at all, papertrail logging
-            /*
+            
             using (var db = new WMS2Entities())
             {
                 // Disable SQL command timeouts
@@ -867,13 +1061,19 @@ namespace DropShipShipmentConfirmations
                     ConfigurationManager.AppSettings["DBConnectionStringRBI"],
                     ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
 
-                
+                // Drop ship PO (850) for FUI Closeout
+                success += GeneratePO850ExportCloseout(
+                    ConfigurationManager.AppSettings["DBPOExportCloseoutQuery"],
+                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                    ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
+
+
                 //// Drop ship shipments (flat file)
                 //success += GenerateFlatFileExport(
                 //    ConfigurationManager.AppSettings["DBPOShipmentExportQuery"],
                 //    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
                 //    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
-                    
+
 
                 // Drop ship shipments (945)
                 success += GenerateShipment945Export(
@@ -885,12 +1085,12 @@ namespace DropShipShipmentConfirmations
                 de.completed_dt = DateTime.Now;
                 db.SaveChanges();
             }
-            */
-            // Drop ship shipments (945)
-            success += GenerateShipment945Export(
-                ConfigurationManager.AppSettings["DB945ExportQuery"],
-                ConfigurationManager.AppSettings["DBConnectionStringT12"],
-                ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
+            
+            //// Drop ship shipments (945)
+            //success += GenerateShipment945Export(
+            //    ConfigurationManager.AppSettings["DB945ExportQuery"],
+            //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
+            //    ConfigurationManager.AppSettings["PathForShipmentExport"]) ? 0 : 1;
 
             //// Web cartons(945)
             //success += GenerateShipment945ExportWeb(
