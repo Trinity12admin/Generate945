@@ -912,6 +912,13 @@ namespace DropShipShipmentConfirmations
                                 s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("W1222")].ToString().Trim()); // W1222
                                 s.Append(Segterm);
 
+                                seg++;
+                                s.Append("N9"); // N900
+                                s.Append(Elemsep + "PV"); // N901
+                                s.Append(Elemsep + dataTable.Rows[i][dataTable.Columns.IndexOf("N902")].ToString().Trim()); // N902
+                                s.Append(Segterm);
+
+
                                 bool isEof = false;
                                 isEof = i == dataTable.Rows.Count - 1;
                                 if (!isEof)
