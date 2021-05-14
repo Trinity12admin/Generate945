@@ -1069,10 +1069,10 @@ namespace DropShipShipmentConfirmations
                     ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
 
                 // Drop ship PO (850) for FUI Closeout
-                success += GeneratePO850ExportCloseout(
-                    ConfigurationManager.AppSettings["DBPOExportCloseoutQuery"],
-                    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
-                    ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
+                //success += GeneratePO850ExportCloseout(
+                //    ConfigurationManager.AppSettings["DBPOExportCloseoutQuery"],
+                //    ConfigurationManager.AppSettings["DBConnectionStringRBI"],
+                //    ConfigurationManager.AppSettings["PathForPOExport"]) ? 0 : 1;
 
 
                 //// Drop ship shipments (flat file)
@@ -1091,9 +1091,9 @@ namespace DropShipShipmentConfirmations
                 // Update the completed_dt
                 de.completed_dt = DateTime.Now;
                 db.SaveChanges();
-            }
-            
-            //// Drop ship shipments (945)
+            } 
+
+            // Drop ship shipments (945)
             //success += GenerateShipment945Export(
             //    ConfigurationManager.AppSettings["DB945ExportQuery"],
             //    ConfigurationManager.AppSettings["DBConnectionStringT12"],
