@@ -2,20 +2,20 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="DropShipShipmentConfirmations.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="NextInterchangeControlNumber" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
-    <Setting Name="NextGroupControlNumber" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
-    <Setting Name="NextTransactionControlNumber" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
-    <Setting Name="NextBOLNumber" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
     <Setting Name="NextCartonNumber" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="NextInterchangeControlNumber" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">755876</Value>
+    </Setting>
+    <Setting Name="NextGroupControlNumber" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">755876</Value>
+    </Setting>
+    <Setting Name="NextTransactionControlNumber" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">755876</Value>
+    </Setting>
+    <Setting Name="NextBOLNumber" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">1511958</Value>
     </Setting>
   </Settings>
 </SettingsFile>
