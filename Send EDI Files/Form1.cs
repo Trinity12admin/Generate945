@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -10,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using Dapper;
 
 namespace Send_EDI_Files
 {
@@ -33,6 +36,7 @@ namespace Send_EDI_Files
             this.txtBoxResults = new System.Windows.Forms.TextBox();
             this.btnSend = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.SendMode_cb = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -44,10 +48,10 @@ namespace Send_EDI_Files
             this.txtBoxOrderNumbers.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtBoxOrderNumbers.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtBoxOrderNumbers.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtBoxOrderNumbers.Location = new System.Drawing.Point(0, 24);
+            this.txtBoxOrderNumbers.Location = new System.Drawing.Point(0, 32);
             this.txtBoxOrderNumbers.Multiline = true;
             this.txtBoxOrderNumbers.Name = "txtBoxOrderNumbers";
-            this.txtBoxOrderNumbers.Size = new System.Drawing.Size(305, 489);
+            this.txtBoxOrderNumbers.Size = new System.Drawing.Size(305, 537);
             this.txtBoxOrderNumbers.TabIndex = 0;
             // 
             // label1
@@ -58,7 +62,7 @@ namespace Send_EDI_Files
             this.label1.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.label1.Location = new System.Drawing.Point(0, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(265, 24);
+            this.label1.Size = new System.Drawing.Size(394, 32);
             this.label1.TabIndex = 1;
             this.label1.Text = "Enter or Paste Order Numbers";
             // 
@@ -71,7 +75,7 @@ namespace Send_EDI_Files
             this.txtBoxResults.Location = new System.Drawing.Point(20, 0);
             this.txtBoxResults.Multiline = true;
             this.txtBoxResults.Name = "txtBoxResults";
-            this.txtBoxResults.Size = new System.Drawing.Size(589, 560);
+            this.txtBoxResults.Size = new System.Drawing.Size(589, 640);
             this.txtBoxResults.TabIndex = 2;
             // 
             // btnSend
@@ -81,7 +85,7 @@ namespace Send_EDI_Files
             this.btnSend.FlatAppearance.BorderSize = 0;
             this.btnSend.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSend.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSend.Location = new System.Drawing.Point(0, 513);
+            this.btnSend.Location = new System.Drawing.Point(0, 569);
             this.btnSend.Name = "btnSend";
             this.btnSend.Size = new System.Drawing.Size(305, 47);
             this.btnSend.TabIndex = 3;
@@ -102,6 +106,7 @@ namespace Send_EDI_Files
             this.splitContainer1.Panel1.Controls.Add(this.txtBoxOrderNumbers);
             this.splitContainer1.Panel1.Controls.Add(this.label1);
             this.splitContainer1.Panel1.Controls.Add(this.btnSend);
+            this.splitContainer1.Panel1.Controls.Add(this.SendMode_cb);
             this.splitContainer1.Panel1MinSize = 200;
             // 
             // splitContainer1.Panel2
@@ -109,14 +114,26 @@ namespace Send_EDI_Files
             this.splitContainer1.Panel2.Controls.Add(this.txtBoxResults);
             this.splitContainer1.Panel2.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
             this.splitContainer1.Panel2MinSize = 400;
-            this.splitContainer1.Size = new System.Drawing.Size(918, 560);
+            this.splitContainer1.Size = new System.Drawing.Size(918, 640);
             this.splitContainer1.SplitterDistance = 305;
             this.splitContainer1.TabIndex = 4;
+            // 
+            // SendMode_cb
+            // 
+            this.SendMode_cb.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.SendMode_cb.FormattingEnabled = true;
+            this.SendMode_cb.Items.AddRange(new object[] {
+            "Send Now",
+            "Send With Next Batch"});
+            this.SendMode_cb.Location = new System.Drawing.Point(0, 616);
+            this.SendMode_cb.Name = "SendMode_cb";
+            this.SendMode_cb.Size = new System.Drawing.Size(305, 24);
+            this.SendMode_cb.TabIndex = 4;
             // 
             // Form1
             // 
             this.BackColor = System.Drawing.SystemColors.MenuHighlight;
-            this.ClientSize = new System.Drawing.Size(974, 629);
+            this.ClientSize = new System.Drawing.Size(974, 709);
             this.Controls.Add(this.splitContainer1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.Name = "Form1";
@@ -133,31 +150,80 @@ namespace Send_EDI_Files
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            SendMode_cb.SelectedIndex = 1;
         }
 
         private void btnSend_Click(object sender, EventArgs e)
         {
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = @"C:\Dev\edi\DropShipTools\bin\Debug\DropShipShipmentConfirmations.exe";   // Specify exe name not cmd exe.
+            txtBoxResults.Text = string.Empty;
+            if (SendMode_cb.SelectedIndex == 0)    //Send now
+            {
+                SendNow();
+                return;
+            }
+
+            SendWithNextBatch();
+        }
+
+        private void SendWithNextBatch()
+        {
+            var connectionString = Properties.Settings.Default.T12DB01ConnectionString;
+            var connection = new SqlConnection(connectionString);
+
+            var orderNumbers = OrdersFromList(txtBoxOrderNumbers.Text);
+            foreach (string orderNumber in orderNumbers)
+            {
+                if(string.IsNullOrWhiteSpace(orderNumber)) continue;
+                var command = $"delete from EDI945Complete where ordernumber = '{orderNumber}'";
+                try {            
+                    connection.Query<string>(command);
+                    txtBoxResults.Text += command + @" - Success" + Environment.NewLine;
+
+                }
+                catch
+                {
+                    txtBoxResults.Text += command + @" - Failed" + Environment.NewLine;
+                }
+            }
+
+        }
+
+        private List<string> OrdersFromList(string text)
+        {
+            string orders = text.Replace("'", "").Replace("\"", "").Replace("\r", " ")
+                .Replace("\n", ","); //Remove ticks and question marks
+            return orders.Split(',').ToList();
+
+        }
+
+
+        private void SendNow()
+        {
+            if (string.IsNullOrWhiteSpace(txtBoxOrderNumbers.Text)) return;
+
+            var start = new ProcessStartInfo();
+            start.FileName = Properties.Settings.Default.Generator945Executable; // Specify exe name not cmd exe.
             start.Arguments = txtBoxOrderNumbers.Text;
             start.UseShellExecute = false;
             start.RedirectStandardOutput = true;
-            //
-            // Start the process.
-            //
-            using (Process process = Process.Start(start))
+            try
             {
-                //
-                // Read in all the text from the process with the StreamReader.
-                //
-                using (StreamReader reader = process.StandardOutput)
+                using (var process = Process.Start(start))
                 {
-                    string result = reader.ReadToEnd();
-                    txtBoxResults.Text = result;
+                    using (var reader = process.StandardOutput)
+                    {
+                        string result = reader.ReadToEnd();
+                        txtBoxResults.Text = result;
+                    }
                 }
             }
-        }
+            catch (Exception ex)
+            {
+                txtBoxResults.Text = $"{start.FileName} not found.  Please check the path and executable in User Settings." +
+                                     Environment.NewLine;
+                txtBoxResults.Text += (ex.Message);
+            }
 
+        }
     }
 }
