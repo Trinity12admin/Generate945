@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
-using System.Data.SqlClient;
+using System.Data; 
+//using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,10 +13,7 @@ namespace DropShipShipmentConfirmations;
 internal class Order
 {
     public List<ShippingCarton> Cartons { get; private set; }
-    public string OrderNumber
-    {
-        get { return _orderNumber; }
-    }
+    public string OrderNumber => _orderNumber;
     private List<LineItem> OrderedItems;
     private readonly List<LineItem> ShippedItems;
     private readonly string _orderNumber;
@@ -30,7 +28,15 @@ internal class Order
         _IsB2B = b2b;
 
         GetOrderedItems();
-        GetShippedItems();
+        try
+        {
+            Console.WriteLine(orderNumber);
+            GetShippedItems();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
         ConsolidateLineItems();
         CreateCartons();
     }
@@ -101,7 +107,6 @@ internal class Order
         string SqlConnectionString = ConfigurationManager.AppSettings["DBConnectionStringRBI"];
         var connection2 = new SqlConnection(SqlConnectionString);
         connection2.Open();
-
         using var sqlCommand = new SqlCommand("usp_B2BShipmentDetails", connection2);
         sqlCommand.CommandType = CommandType.StoredProcedure;
         sqlCommand.Parameters.AddWithValue("@OrderNumber", _orderNumber);

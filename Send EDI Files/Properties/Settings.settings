@@ -1,15 +1,17 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Send_EDI_Files.Properties" GeneratedClassName="Settings">
-  <Profiles />
-  <Settings>
-    <Setting Name="OutputFolder" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">\\T12DB01.RBI.LOCAL\FTP\edi\Shipped</Value>
-    </Setting>
-    <Setting Name="T12DB01ConnectionString" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">Server=T12DB01.RBI.LOCAL; User ID=sa; Password=9ure3atEbexe; Database=EDI;</Value>
-    </Setting>
-    <Setting Name="Generator945Executable" Type="System.String" Scope="User">
-      <Value Profile="(Default)">command.exe</Value>
-    </Setting>
-  </Settings>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)"
+              GeneratedClassNamespace="Send_EDI_Files.Properties" GeneratedClassName="Settings">
+    <Profiles/>
+    <Settings>
+        <Setting Name="OutputFolder" Type="System.String" Scope="Application">
+            <Value Profile="(Default)">\\T12DB01.RBI.LOCAL\FTP\edi\Shipped</Value>
+        </Setting>
+        <Setting Name="T12DB01ConnectionString" Type="System.String" Scope="Application">
+            <Value Profile="(Default)">Server=T12DB01.RBI.LOCAL; User ID=sa; Password=9ure3atEbexe; Database=EDI;
+            </Value>
+        </Setting>
+        <Setting Name="Generator945Executable" Type="System.String" Scope="User">
+            <Value Profile="(Default)">command.exe</Value>
+        </Setting>
+    </Settings>
 </SettingsFile>

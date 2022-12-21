@@ -5,10 +5,12 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Mail;
 using System.Security;
 using System.Text;
-using FluentEmail;
+using FluentEmail.Core;
+using FluentEmail.Smtp;
 
 namespace DropShipShipmentConfirmations;
 
@@ -22,10 +24,10 @@ public static class Export945Shipment
         Console.WriteLine(query);
         using var dataAdapter = new SqlDataAdapter(query, connectionString);
         dataAdapter.SelectCommand.CommandTimeout = 0; // disable SQL timeout
-        
-        while(true)
+
+        while (true)
         {
-            List<Completed945> completed945s = new List<Completed945>();
+            var completed945S = new List<Completed945>();
 
             using var dataSet = new DataSet();
             dataSet.Locale = CultureInfo.InvariantCulture;
@@ -34,11 +36,8 @@ public static class Export945Shipment
 
             for (int tbl = 0; tbl < dataSet.Tables.Count; tbl++)
             {
-                if (dataSet.Tables[tbl].Rows.Count == 0)
-                {
-                    continue;
-                }
-                
+                if (dataSet.Tables[tbl].Rows.Count == 0) continue;
+
                 using var dataTable = dataSet.Tables[tbl];
                 var s = new StringBuilder();
                 int groupCount = 0;
@@ -96,9 +95,14 @@ public static class Export945Shipment
                     ln = 0; // line number counter
                     seg = 0; // segment line number
                     string orderNumber = dataTable.Rows[i][dataTable.Columns.IndexOf("W0606")].ToString().Trim();
-                    orderB2B = Convert.ToBoolean(Convert.ToInt16(dataTable.Rows[i][dataTable.Columns.IndexOf("IsB2B")],
-                        CultureInfo.InvariantCulture));
+                    orderB2B = Convert.ToBoolean(Convert.ToInt16(dataTable.Rows[i][dataTable.Columns.IndexOf("IsB2B")], CultureInfo.InvariantCulture));
                     order = new Order(orderNumber, orderB2B);
+
+                    if (order.IsB2B && order.Cartons.Any((carton => string.IsNullOrEmpty(carton.BoxID))))
+                    {
+                        SendBad945Notification(order);
+                        continue;     //do not generate 945 for B2B orders with no box ID
+                    }
 
                     //START OF 945 Transaction
                     groupCount++;
@@ -279,7 +283,7 @@ public static class Export945Shipment
                     s.Append(segterm);
 
                     transactionControlNumber++;
-                    completed945s.Add(new Completed945
+                    completed945S.Add(new Completed945
                     {
                         TransactionSetId = int.Parse(dataTable.Rows[i][dataTable.Columns.IndexOf("TransactionSetId")]
                             .ToString().Trim(), CultureInfo.InvariantCulture),
@@ -309,10 +313,9 @@ public static class Export945Shipment
                 try
                 {
                     File.WriteAllText(pathForExport + filename, s.ToString());
-                    #if !DEBUG
-                        Completed945.Save(completed945s);
-                    #endif
-                    
+#if !DEBUG
+                        Completed945.Save(completed945S);
+#endif
                 }
                 catch (IOException ex)
                 {
@@ -346,30 +349,47 @@ public static class Export945Shipment
                     Console.WriteLine(ex.Message);
                     Console.ResetColor();
                 }
-                #if !DEBUG
-                    SendEmailNotification(completed945s);
-                #endif
-                
+#if !DEBUG
+                    SendEmailNotification(completed945S);
+#endif
             }
+
             if (dataSet.Tables[0].Rows.Count < 500)
                 break;
         }
-        
+
         return true;
     }
 
     private static void SendEmailNotification(List<Completed945> completed945S)
     {
-        var smtpClient = new SmtpClient(ConfigurationManager.AppSettings["SMTPServer"],
+        using var smtpClient = new SmtpClient(ConfigurationManager.AppSettings["SMTPServer"],
             int.Parse(ConfigurationManager.AppSettings["SMTPPort"], CultureInfo.InvariantCulture));
-       Email
+
+        Email.DefaultSender = new SmtpSender(smtpClient);
+
+        Email
             .From(ConfigurationManager.AppSettings["945SenderFrom"])
             .To(ConfigurationManager.AppSettings["945RecipientTo"])
             .CC(ConfigurationManager.AppSettings["945RecipientCC"])
             .Subject($"945 Notification - {DateTime.Now}")
             .Body($"Sent {completed945S.Count}  945s  at  {DateTime.Now}")
-            .UsingClient(smtpClient)
             .Send();
-       smtpClient.Dispose();
+    }
+    
+    private static void SendBad945Notification(Order order)
+    {
+        using var smtpClient = new SmtpClient(ConfigurationManager.AppSettings["SMTPServer"],
+            int.Parse(ConfigurationManager.AppSettings["SMTPPort"], CultureInfo.InvariantCulture));
+
+        Email.DefaultSender = new SmtpSender(smtpClient);
+
+        Email
+            .From(ConfigurationManager.AppSettings["945SenderFrom"])
+            .To(ConfigurationManager.AppSettings["945RecipientTo"])
+            .CC(ConfigurationManager.AppSettings["945RecipientCC"])
+            .Subject($"945 Skipped Notification - {DateTime.Now}")
+            .Body($"Order {order.OrderNumber} was skipped at {DateTime.Now} because it does not have proper BoxIds")
+            .Send();
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Dapper;
 
 namespace DropShipShipmentConfirmations;
@@ -16,12 +16,14 @@ public class Completed945
 
     public static bool Save(List<Completed945> completed945s)
     {
-        var connectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
+        string? connectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
         using var connection = new SqlConnection(connectionString);
 
         try
         {
-            connection.Execute("insert into edi.dbo.EDI945Complete values (@TransactionSetId, @OrderNumber, @FileName, @ProcessedDate)", completed945s );
+            connection.Execute(
+                "insert into edi.dbo.EDI945Complete values (@TransactionSetId, @OrderNumber, @FileName, @ProcessedDate)",
+                completed945s);
         }
         catch (Exception e)
         {
@@ -34,7 +36,7 @@ public class Completed945
 
     public static bool Clear(string orderNumber)
     {
-        var connectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
+        string? connectionString = ConfigurationManager.AppSettings["DBConnectionStringT12"];
         using var connection = new SqlConnection(connectionString);
 
         try
