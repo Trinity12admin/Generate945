@@ -37,15 +37,27 @@ internal class Order
         {
             Console.WriteLine(e);
         }
+
         ConsolidateLineItems();
         CreateCartons();
     }
 
     public int TotalItems => OrderedItems.Sum(li => li.QtyShipped);
     public int TotalCartons => Cartons.Count;
-    public bool IsB2B => _IsB2B;
-    public string OriginalOrderNumber => Regex.Replace(_orderNumber, @"-FUI(\d){3,5}", "");
 
+    public bool IsB2B => _IsB2B;
+
+    /// <summary>
+    /// Returns Original OrderNumber without -FUIxxx or -DUPxxx
+    /// </summary>
+    public string OriginalOrderNumber {
+        get
+        {
+            string clean1OrderNumber = Regex.Replace(_orderNumber, @"-FUI(\d){3,5}", "");
+            string clean2OrderNumber =  Regex.Replace(clean1OrderNumber, @"=DUP(\d){3,5}", "");
+            return clean2OrderNumber;
+        }
+    }
     public int TotalWeight
     {
         get
